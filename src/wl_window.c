@@ -741,6 +741,8 @@ int _glfwPlatformCreateCursor(_GLFWcursor* cursor,
     int length = image->width * image->height * 4;
     void* data;
     int fd, i;
+    unsigned char* source;
+    unsigned char* target;
 
     fd = createAnonymousFile(length);
     if (fd < 0)
@@ -763,8 +765,8 @@ int _glfwPlatformCreateCursor(_GLFWcursor* cursor,
     pool = wl_shm_create_pool(_glfw.wl.shm, fd, length);
 
     close(fd);
-    unsigned char* source = (unsigned char*) image->pixels;
-    unsigned char* target = data;
+    source = (unsigned char*) image->pixels;
+    target = data;
     for (i = 0;  i < image->width * image->height;  i++, source += 4)
     {
         unsigned int alpha = source[3];

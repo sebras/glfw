@@ -241,10 +241,12 @@ GLFWbool _glfwSetVideoModeX11(_GLFWmonitor* monitor, const GLFWvidmode* desired)
         for (i = 0;  i < oi->nmode;  i++)
         {
             const XRRModeInfo* mi = getModeInfo(sr, oi->modes[i]);
+            GLFWvidmode mode;
+
             if (!modeIsGood(mi))
                 continue;
 
-            const GLFWvidmode mode = vidmodeFromModeInfo(mi, ci);
+            mode = vidmodeFromModeInfo(mi, ci);
             if (_glfwCompareVideoModes(best, &mode) == 0)
             {
                 native = mi->id;
@@ -360,10 +362,12 @@ GLFWvidmode* _glfwPlatformGetVideoModes(_GLFWmonitor* monitor, int* count)
         for (i = 0;  i < oi->nmode;  i++)
         {
             const XRRModeInfo* mi = getModeInfo(sr, oi->modes[i]);
+            GLFWvidmode mode;
+
             if (!modeIsGood(mi))
                 continue;
 
-            const GLFWvidmode mode = vidmodeFromModeInfo(mi, ci);
+            mode = vidmodeFromModeInfo(mi, ci);
 
             for (j = 0;  j < *count;  j++)
             {
@@ -453,6 +457,8 @@ void _glfwPlatformSetGammaRamp(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
 {
     if (_glfw.x11.randr.available && !_glfw.x11.randr.gammaBroken)
     {
+        XRRCrtcGamma* gamma;
+
         if (XRRGetCrtcGammaSize(_glfw.x11.display, monitor->x11.crtc) != ramp->size)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
@@ -460,7 +466,7 @@ void _glfwPlatformSetGammaRamp(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
             return;
         }
 
-        XRRCrtcGamma* gamma = XRRAllocGamma(ramp->size);
+        gamma = XRRAllocGamma(ramp->size);
 
         memcpy(gamma->red,   ramp->red,   ramp->size * sizeof(unsigned short));
         memcpy(gamma->green, ramp->green, ramp->size * sizeof(unsigned short));

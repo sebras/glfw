@@ -134,12 +134,15 @@ GLFWvidmode* _glfwPlatformGetVideoModes(_GLFWmonitor* monitor, int* found)
     {
         const MirOutput* output = mir_display_config_get_output(displayConfig, i);
         int id = mir_output_get_id(output);
+        MirOutputConnectionState state;
+        bool enabled;
+        int numModes;
 
         if (id != monitor->mir.outputId)
             continue;
 
-        MirOutputConnectionState state = mir_output_get_connection_state(output);
-        bool enabled = mir_output_is_enabled(output);
+        state = mir_output_get_connection_state(output);
+        enabled = mir_output_is_enabled(output);
 
         // We must have been disconnected
         if (!enabled || state != mir_output_connection_state_connected)
@@ -149,7 +152,7 @@ GLFWvidmode* _glfwPlatformGetVideoModes(_GLFWmonitor* monitor, int* found)
             return NULL;
         }
 
-        int numModes = mir_output_get_num_modes(output);
+        numModes = mir_output_get_num_modes(output);
         modes = calloc(numModes, sizeof(GLFWvidmode));
 
         for (*found = 0;  *found < numModes;  (*found)++)

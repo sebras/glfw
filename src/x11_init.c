@@ -373,6 +373,8 @@ static void detectEWMH(void)
 {
     Window* windowFromRoot = NULL;
     Window* windowFromChild = NULL;
+    Atom* supportedAtoms;
+    unsigned long atomCount;
 
     // First we need a couple of atoms
     const Atom supportingWmCheck =
@@ -416,9 +418,6 @@ static void detectEWMH(void)
     XFree(windowFromChild);
 
     // We are now fairly sure that an EWMH-compliant window manager is running
-
-    Atom* supportedAtoms;
-    unsigned long atomCount;
 
     // Now we need to check the _NET_SUPPORTED property of the root window
     // It should be a list of supported WM protocol and state atoms
@@ -728,6 +727,8 @@ Cursor _glfwCreateCursorX11(const GLFWimage* image, int xhot, int yhot)
 {
     int i;
     Cursor cursor;
+    unsigned char* source;
+    XcursorPixel* target;
 
     XcursorImage* native = XcursorImageCreate(image->width, image->height);
     if (native == NULL)
@@ -736,8 +737,8 @@ Cursor _glfwCreateCursorX11(const GLFWimage* image, int xhot, int yhot)
     native->xhot = xhot;
     native->yhot = yhot;
 
-    unsigned char* source = (unsigned char*) image->pixels;
-    XcursorPixel* target = native->pixels;
+    source = (unsigned char*) image->pixels;
+    target = native->pixels;
 
     for (i = 0;  i < image->width * image->height;  i++, target++, source += 4)
     {

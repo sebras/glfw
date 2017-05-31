@@ -411,6 +411,8 @@ static char** parseUriList(char* text, int* count)
 
     while ((line = strtok(text, "\r\n")))
     {
+        char* path;
+
         text = NULL;
 
         if (line[0] == '#')
@@ -426,7 +428,7 @@ static char** parseUriList(char* text, int* count)
 
         (*count)++;
 
-        char* path = calloc(strlen(line) + 1, 1);
+        path = calloc(strlen(line) + 1, 1);
         paths = realloc(paths, *count * sizeof(char*));
         paths[*count - 1] = path;
 
@@ -1096,11 +1098,13 @@ static void processEvent(XEvent *event)
             else
             {
                 KeySym keysym;
+                long character;
+
                 XLookupString(&event->xkey, NULL, 0, &keysym, NULL);
 
                 _glfwInputKey(window, key, keycode, GLFW_PRESS, mods);
 
-                const long character = _glfwKeySym2Unicode(keysym);
+                character = _glfwKeySym2Unicode(keysym);
                 if (character != -1)
                     _glfwInputChar(window, character, mods, plain);
             }
@@ -1249,13 +1253,15 @@ static void processEvent(XEvent *event)
 
                 if (window->cursorMode == GLFW_CURSOR_DISABLED)
                 {
+                    int dx, dy;
+
                     if (_glfw.x11.disabledCursorWindow != window)
                         return;
                     if (_glfw.x11.xi.available)
                         return;
 
-                    const int dx = x - window->x11.lastCursorPosX;
-                    const int dy = y - window->x11.lastCursorPosY;
+                    dx = x - window->x11.lastCursorPosX;
+                    dy = y - window->x11.lastCursorPosY;
 
                     _glfwInputCursorPos(window,
                                         window->virtualCursorPosX + dx,
@@ -1425,6 +1431,7 @@ static void processEvent(XEvent *event)
                 const int yabs = (event->xclient.data.l[2]) & 0xffff;
                 Window dummy;
                 int xpos, ypos;
+                XEvent reply;
 
                 if (_glfw.x11.xdnd.version > _GLFW_XDND_VERSION)
                     return;
@@ -1438,7 +1445,6 @@ static void processEvent(XEvent *event)
 
                 _glfwInputCursorPos(window, xpos, ypos);
 
-                XEvent reply;
                 memset(&reply, 0, sizeof(reply));
 
                 reply.type = ClientMessage;
@@ -1571,10 +1577,12 @@ static void processEvent(XEvent *event)
             if (event->xproperty.atom == _glfw.x11.WM_STATE)
             {
                 const int state = getWindowState(window);
+                GLFWbool iconified;
+
                 if (state != IconicState && state != NormalState)
                     return;
 
-                const GLFWbool iconified = (state == IconicState);
+                iconified = (state == IconicState);
                 if (window->x11.iconified != iconified)
                 {
                     if (window->monitor)
@@ -1838,12 +1846,14 @@ void _glfwPlatformSetWindowIcon(_GLFWwindow* window,
     if (count)
     {
         int i, j, longCount = 0;
+        long* icon;
+        long* target;
 
         for (i = 0;  i < count;  i++)
             longCount += 2 + images[i].width * images[i].height;
 
-        long* icon = calloc(longCount, sizeof(long));
-        long* target = icon;
+        icon = calloc(longCount, sizeof(long));
+        target = icon;
 
         for (i = 0;  i < count;  i++)
         {
@@ -2328,12 +2338,14 @@ void _glfwPlatformSetWindowFloating(_GLFWwindow* window, GLFWbool enabled)
 
 void _glfwPlatformPollEvents(void)
 {
+    int count;
+
     _GLFWwindow* window;
 
 #if defined(__linux__)
     _glfwDetectJoystickConnectionLinux();
 #endif
-    int count = XPending(_glfw.x11.display);
+    count = XPending(_glfw.x11.display);
     while (count--)
     {
         XEvent event;
@@ -2476,6 +2488,10 @@ void _glfwPlatformSetCursorMode(_GLFWwindow* window, int mode)
 
 const char* _glfwPlatformGetKeyName(int key, int scancode)
 {
+    KeySym keysym;
+    long ch;
+    size_t count;
+
     if (!_glfw.x11.xkb.available)
         return NULL;
 
@@ -2485,15 +2501,15 @@ const char* _glfwPlatformGetKeyName(int key, int scancode)
     if (!_glfwIsPrintable(_glfw.x11.keycodes[scancode]))
         return NULL;
 
-    const KeySym keysym = XkbKeycodeToKeysym(_glfw.x11.display, scancode, 0, 0);
+    keysym = XkbKeycodeToKeysym(_glfw.x11.display, scancode, 0, 0);
     if (keysym == NoSymbol)
         return NULL;
 
-    const long ch = _glfwKeySym2Unicode(keysym);
+    ch = _glfwKeySym2Unicode(keysym);
     if (ch == -1)
         return NULL;
 
-    const size_t count = encodeUTF8(_glfw.x11.keyName, (unsigned int) ch);
+    count = encodeUTF8(_glfw.x11.keyName, (unsigned int) ch);
     if (count == 0)
         return NULL;
 
@@ -2664,6 +2680,8 @@ int _glfwPlatformGetPhysicalDevicePresentationSupport(VkInstance instance,
 
     if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
     {
+        xcb_connection_t* connection;
+
         PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR vkGetPhysicalDeviceXcbPresentationSupportKHR =
             (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)
             vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
@@ -2674,8 +2692,7 @@ int _glfwPlatformGetPhysicalDevicePresentationSupport(VkInstance instance,
             return GLFW_FALSE;
         }
 
-        xcb_connection_t* connection =
-            _glfw.x11.x11xcb.XGetXCBConnection(_glfw.x11.display);
+        connection = _glfw.x11.x11xcb.XGetXCBConnection(_glfw.x11.display);
         if (!connection)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,

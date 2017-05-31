@@ -203,13 +203,15 @@ static void handlePointerMotion(_GLFWwindow* window,
 
     if (window->cursorMode == GLFW_CURSOR_DISABLED)
     {
+        int dx, dy, current_x, current_y;
+
         if (_glfw.mir.disabledCursorWindow != window)
             return;
 
-        const int dx = mir_pointer_event_axis_value(pointer_event, mir_pointer_axis_relative_x);
-        const int dy = mir_pointer_event_axis_value(pointer_event, mir_pointer_axis_relative_y);
-        const int current_x = window->virtualCursorPosX;
-        const int current_y = window->virtualCursorPosY;
+        dx = mir_pointer_event_axis_value(pointer_event, mir_pointer_axis_relative_x);
+        dy = mir_pointer_event_axis_value(pointer_event, mir_pointer_axis_relative_y);
+        current_x = window->virtualCursorPosX;
+        current_y = window->virtualCursorPosY;
 
         _glfwInputCursorPos(window, dx + current_x, dy + current_y);
     }
@@ -690,9 +692,13 @@ int _glfwPlatformCreateCursor(_GLFWcursor* cursor,
                               int xhot, int yhot)
 {
     MirBufferStream* stream;
+    MirGraphicsRegion region;
 
     int i_w = image->width;
     int i_h = image->height;
+    unsigned char* pixels = image->pixels;
+    char* dest;
+    int i;
 
     stream = mir_connection_create_buffer_stream_sync(_glfw.mir.connection,
                                                       i_w, i_h,
@@ -701,12 +707,8 @@ int _glfwPlatformCreateCursor(_GLFWcursor* cursor,
 
     cursor->mir.conf = mir_cursor_configuration_from_buffer_stream(stream, xhot, yhot);
 
-    MirGraphicsRegion region;
     mir_buffer_stream_get_graphics_region(stream, &region);
-
-    unsigned char* pixels = image->pixels;
-    char* dest = region.vaddr;
-    int i;
+    dest = region.vaddr;
 
     for (i = 0; i < i_w * i_h; i++, pixels += 4)
     {
